@@ -6,6 +6,7 @@ pipeline {
         IMAGE_TAG = "latest"
         DEPLOY_YAML = "deployment.yaml"
         SERVICE_YAML = "service.yaml"
+        KUBECONFIG = "/var/lib/jenkins/.kube/config"
     }
 
     stages {
@@ -30,8 +31,9 @@ pipeline {
         stage('Deploy to Minikube') {
             steps {
                 script {
-                    sh "kubectl apply -f ${DEPLOY_YAML}"
-                    sh "kubectl apply -f ${SERVICE_YAML}"
+                    // EXPLICITLY set KUBECONFIG in each command
+                    sh "KUBECONFIG=/var/lib/jenkins/.kube/config kubectl apply -f ${DEPLOY_YAML}"
+                    sh "KUBECONFIG=/var/lib/jenkins/.kube/config kubectl apply -f ${SERVICE_YAML}"
                 }
             }
         }
@@ -39,7 +41,10 @@ pipeline {
 
     post {
         success {
-            echo "App deployed! Visit: http://localhost:30080"
+            echo "✅ App deployed! Visit: http://localhost:30080"
+        }
+        failure {
+            echo "❌ Deployment failed. Check logs."
         }
     }
 }
