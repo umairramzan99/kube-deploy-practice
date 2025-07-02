@@ -15,6 +15,7 @@ spec:
       containers:
         - name: visitor
           image: visitor-counter-app:latest
+          imagePullPolicy: Never
           ports:
             - containerPort: 8080
 
