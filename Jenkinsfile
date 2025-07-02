@@ -22,7 +22,7 @@ pipeline {
             steps {
                 script {
                     dir('app') {
-                        sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
+                        sh "eval $(minikube docker-env) && docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
                     }
                 }
             }
