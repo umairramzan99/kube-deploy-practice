@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: visitor-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: visitor
+  template:
+    metadata:
+      labels:
+        app: visitor
+    spec:
+      containers:
+        - name: visitor
+          image: visitor-counter-app:latest
+          ports:
+            - containerPort: 8080
+
