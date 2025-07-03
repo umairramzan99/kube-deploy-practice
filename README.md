@@ -18,16 +18,23 @@ This project is a simple Python Flask app that counts visitors using Redis, cont
 
 ```
 visitor-app/
-├── app/
-│   ├── app.py
-│   ├── Dockerfile
-│   └── requirements.txt
+.
+├── app
+│   ├── app.py
+│   ├── Dockerfile
+│   └── requirements.txt
 ├── deployment.yaml
-├── service.yaml
-├── redis-deployment.yaml
-├── redis-service.yaml
+├── docker-compose.yml
 ├── Jenkinsfile
-└── README.md
+├── nginx
+│   ├── default.conf
+│   └── Dockerfile
+├── README.md
+├── redis-deployment.yaml
+├── redis-pvc.yaml
+├── redis-pv.yaml
+├── redis-service.yaml
+└── service.yaml
 ```
 
 ---
