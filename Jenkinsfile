@@ -6,25 +6,24 @@ pipeline {
         IMAGE_TAG = "latest"
         DEPLOY_YAML = "deployment.yaml"
         SERVICE_YAML = "service.yaml"
+        REDIS_DEPLOY = "redis-deployment.yaml"
+        REDIS_SERVICE = "redis-service.yaml"
+        REDIS_PV = "redis-pv.yaml"
+        REDIS_PVC = "redis-pvc.yaml"
         KUBECONFIG = "/var/lib/jenkins/.kube/config"
     }
 
     stages {
-        stage('Use Minikube Docker Daemon') {
-            steps {
-                script {
-                    sh 'eval $(minikube docker-env)'
-                }
-            }
-        }
-
         stage('Build Docker Image') {
             steps {
                 script {
                     dir('app') {
                         sh """
-                          eval \$(minikube docker-env) && \
-                          docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .
+                            export DOCKER_TLS_VERIFY=1
+                            export DOCKER_HOST=tcp://192.168.58.2:2376
+                            export DOCKER_CERT_PATH=/var/lib/jenkins/.minikube/certs
+                            export MINIKUBE_ACTIVE_DOCKERD=minikube
+                            docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .
                         """
                     }
                 }
@@ -34,13 +33,13 @@ pipeline {
         stage('Deploy to Minikube') {
             steps {
                 script {
-                    // Deploy Redis persistent components first
-                    sh "KUBECONFIG=${KUBECONFIG} kubectl apply -f redis-pv.yaml"
-                    sh "KUBECONFIG=${KUBECONFIG} kubectl apply -f redis-pvc.yaml"
-                    sh "KUBECONFIG=${KUBECONFIG} kubectl apply -f redis-deployment.yaml"
-                    sh "KUBECONFIG=${KUBECONFIG} kubectl apply -f redis-service.yaml"
+                    // Deploy Redis components
+                    sh "KUBECONFIG=${KUBECONFIG} kubectl apply -f ${REDIS_PV}"
+                    sh "KUBECONFIG=${KUBECONFIG} kubectl apply -f ${REDIS_PVC}"
+                    sh "KUBECONFIG=${KUBECONFIG} kubectl apply -f ${REDIS_DEPLOY}"
+                    sh "KUBECONFIG=${KUBECONFIG} kubectl apply -f ${REDIS_SERVICE}"
 
-                    // Deploy main app
+                    // Deploy Visitor app
                     sh "KUBECONFIG=${KUBECONFIG} kubectl apply -f ${DEPLOY_YAML}"
                     sh "KUBECONFIG=${KUBECONFIG} kubectl apply -f ${SERVICE_YAML}"
                 }
@@ -50,10 +49,10 @@ pipeline {
 
     post {
         success {
-            echo "✅ App and Redis deployed! Visit your app using: minikube service visitor-service --url"
+            echo "✅ Deployment successful! Visit using: minikube service visitor-service --url"
         }
         failure {
-            echo "❌ Deployment failed. Check logs."
+            echo "❌ Deployment failed. Check pipeline logs."
         }
     }
 }
