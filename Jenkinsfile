@@ -6,8 +6,6 @@ pipeline {
         IMAGE_TAG = "latest"
         DEPLOY_YAML = "deployment.yaml"
         SERVICE_YAML = "service.yaml"
-        REDIS_DEPLOY = "redis-deployment.yaml"
-        REDIS_SERVICE = "redis-service.yaml"
         KUBECONFIG = "/var/lib/jenkins/.kube/config"
     }
 
@@ -25,9 +23,9 @@ pipeline {
                 script {
                     dir('app') {
                         sh """
-                            eval \$(minikube docker-env)
-                            docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .
-                        """
+                         eval \$(minikube docker-env)
+                         docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .
+                       """
                     }
                 }
             }
@@ -36,8 +34,13 @@ pipeline {
         stage('Deploy to Minikube') {
             steps {
                 script {
-                    sh "KUBECONFIG=${KUBECONFIG} kubectl apply -f ${REDIS_DEPLOY}"
-                    sh "KUBECONFIG=${KUBECONFIG} kubectl apply -f ${REDIS_SERVICE}"
+                    // Deploy Redis persistent components first
+                    sh "KUBECONFIG=${KUBECONFIG} kubectl apply -f redis-pv.yaml"
+                    sh "KUBECONFIG=${KUBECONFIG} kubectl apply -f redis-pvc.yaml"
+                    sh "KUBECONFIG=${KUBECONFIG} kubectl apply -f redis-deployment.yaml"
+                    sh "KUBECONFIG=${KUBECONFIG} kubectl apply -f redis-service.yaml"
+
+                    // Deploy main app
                     sh "KUBECONFIG=${KUBECONFIG} kubectl apply -f ${DEPLOY_YAML}"
                     sh "KUBECONFIG=${KUBECONFIG} kubectl apply -f ${SERVICE_YAML}"
                 }
@@ -47,11 +50,10 @@ pipeline {
 
     post {
         success {
-            echo "✅ App deployed! Visit: http://localhost:30080"
+            echo "✅ App and Redis deployed! Visit your app using: minikube service visitor-service --url"
         }
         failure {
             echo "❌ Deployment failed. Check logs."
         }
     }
 }
-
