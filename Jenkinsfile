@@ -6,6 +6,8 @@ pipeline {
         IMAGE_TAG = "latest"
         DEPLOY_YAML = "deployment.yaml"
         SERVICE_YAML = "service.yaml"
+        REDIS_DEPLOY = "redis-deployment.yaml"
+        REDIS_SERVICE = "redis-service.yaml"
         KUBECONFIG = "/var/lib/jenkins/.kube/config"
     }
 
@@ -23,9 +25,9 @@ pipeline {
                 script {
                     dir('app') {
                         sh """
-                         eval \$(minikube docker-env)
-                         docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .
-                       """
+                            eval \$(minikube docker-env)
+                            docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .
+                        """
                     }
                 }
             }
@@ -34,9 +36,10 @@ pipeline {
         stage('Deploy to Minikube') {
             steps {
                 script {
-                    // EXPLICITLY set KUBECONFIG in each command
-                    sh "KUBECONFIG=/var/lib/jenkins/.kube/config kubectl apply -f ${DEPLOY_YAML}"
-                    sh "KUBECONFIG=/var/lib/jenkins/.kube/config kubectl apply -f ${SERVICE_YAML}"
+                    sh "KUBECONFIG=${KUBECONFIG} kubectl apply -f ${REDIS_DEPLOY}"
+                    sh "KUBECONFIG=${KUBECONFIG} kubectl apply -f ${REDIS_SERVICE}"
+                    sh "KUBECONFIG=${KUBECONFIG} kubectl apply -f ${DEPLOY_YAML}"
+                    sh "KUBECONFIG=${KUBECONFIG} kubectl apply -f ${SERVICE_YAML}"
                 }
             }
         }
