@@ -1,126 +1,146 @@
-# Visitor Counter App with CI/CD Pipeline (Jenkins + Kubernetes)
 
-This project is a simple Python Flask app that counts visitors using Redis, containerized with Docker, and deployed via Kubernetes using a Jenkins CI/CD pipeline running on Minikube.
+# Visitor Counter App with Redis, Kubernetes & Jenkins CI/CD
 
----
+This project is a simple Flask + Redis web app that shows the number of visitors. It uses:
 
-## 🛠 Tech Stack
-
-- Python + Flask
-- Redis
-- Docker
-- Kubernetes (via Minikube)
-- Jenkins (external, running on localhost:8085)
+- ✅ Flask app as the frontend (`app/app.py`)
+- 🧠 Redis for storing visitor count
+- ☸️ Kubernetes for deployment (Minikube)
+- 📦 PersistentVolume so visitor count is saved across pod restarts
+- ⚙️ Jenkins pipeline for automated CI/CD
+- 🐳 Docker to containerize the app
 
 ---
 
-## 📁 Project Structure
+## 📁 Directory Structure
 
 ```
-visitor-app/
 .
 ├── app
-│   ├── app.py
-│   ├── Dockerfile
-│   └── requirements.txt
+│   ├── app.py
+│   ├── Dockerfile
+│   └── requirements.txt
 ├── deployment.yaml
-├── docker-compose.yml
+├── service.yaml
 ├── Jenkinsfile
-├── nginx
-│   ├── default.conf
-│   └── Dockerfile
-├── README.md
 ├── redis-deployment.yaml
-├── redis-pvc.yaml
-├── redis-pv.yaml
 ├── redis-service.yaml
-└── service.yaml
+├── redis-pv.yaml
+├── redis-pvc.yaml
 ```
 
 ---
 
-## 🚀 How to Run
+## 🚀 Getting Started
 
-### 1. Clone the Repository
+### 🔧 Prerequisites
+
+- Minikube installed and started
+- Jenkins running locally (e.g. at `localhost:8085`)
+- Docker installed
+- Git installed
+
+---
+
+## 🛠️ Setup Instructions
+
+### 1. Clone the Repo
 
 ```bash
 git clone https://github.com/umairramzan99/kube-deploy-practice.git
 cd kube-deploy-practice
 ```
 
----
-
-### 2. Set Up Minikube (if not already running)
-
-Start your Minikube cluster:
+### 2. Ensure Redis Volume Directory Exists
 
 ```bash
-minikube start
+mkdir -p /home/umair/redis-data
 ```
 
-Ensure Docker inside Minikube is configured:
+This path will be used as the host path for Redis data.
+
+---
+
+### 3. Start Minikube with Volume Mount
 
 ```bash
-eval $(minikube docker-env)
+minikube stop
+minikube start --mount --mount-string="/home/umair/redis-data:/mnt/redis-data"
 ```
 
 ---
 
-### 3. Set Up Jenkins
+### 4. Set Up Jenkins Access to Minikube
 
-Make sure Jenkins is:
-- Installed and accessible at `http://localhost:8085`
-- Has the following plugins:
-  - Git
-  - Pipeline
-- Has access to your `.kube/config` file (`/var/lib/jenkins/.kube/config`)
+> If Jenkins fails to reach Minikube, do this:
 
----
+```bash
+# As host user
+sudo mkdir -p /var/lib/jenkins/.kube /var/lib/jenkins/.minikube
+sudo cp -r ~/.kube/config /var/lib/jenkins/.kube/config
+sudo cp -r ~/.minikube/profiles ~/.minikube/certs /var/lib/jenkins/.minikube/
+sudo chown -R jenkins:jenkins /var/lib/jenkins/.kube /var/lib/jenkins/.minikube
+```
 
-### 4. Create Jenkins Pipeline
-
-1. Open Jenkins
-2. Create a **New Item** → **Pipeline**
-3. Choose **"Pipeline script from SCM"**
-4. Use the GitHub repo URL:
-   ```
-   https://github.com/umairramzan99/kube-deploy-practice.git
-   ```
-5. Jenkins will use the `Jenkinsfile` in this repo to:
-   - Build Docker image
-   - Deploy Redis and Flask app to Minikube
+Edit `/var/lib/jenkins/.kube/config` and replace any path starting with `/home/umair/.minikube` to `/var/lib/jenkins/.minikube`
 
 ---
 
-### 5. Access the App
+### 5. Create Jenkins Pipeline
 
-After a successful pipeline run, open:
+In Jenkins UI:
+
+- Go to **New Item**
+- Choose **Pipeline**
+- Use this Git repo: `https://github.com/umairramzan99/kube-deploy-practice.git`
+- Pipeline script path: `Jenkinsfile`
+- Click **Build Now**
+
+---
+
+## 🌐 Access the App
 
 ```bash
 minikube service visitor-service --url
 ```
 
-You should see:
+It should open something like:
 
 ```
-Hello from Flask! You are visitor number: 1
+http://192.168.xx.xx:30080
 ```
 
 ---
 
-## 🧼 Cleanup
+## 🧪 Test Persistence
 
-To delete everything:
+- Visit the app → Refresh 4–5 times → note the visitor count
+- Run:  
+  ```bash
+  kubectl delete pod -l app=visitor
+  ```
+- Wait for pod to restart
+- Visit the URL again
+
+✅ Visitor number should continue (e.g., 6, 7…)  
+❌ If it resets to 1, check if `/home/umair/redis-data/` contains `dump.rdb`
+
+---
+
+## 📤 Pushing to Docker Hub (Optional)
+
+Once ready to push images to Docker Hub:
 
 ```bash
-kubectl delete deployment visitor-app redis
-kubectl delete service visitor-service redis
+docker login
+docker tag visitor-counter-app umairhub/visitor-counter-app:latest
+docker push umairhub/visitor-counter-app:latest
 ```
+
+Update `deployment.yaml` to pull from Docker Hub.
 
 ---
 
-## 🙌 Author
+## 📃 Credits
 
-**Umair Ramzan**  
-A hands-on DevOps & Kubernetes practice project.  
-Feel free to fork and build on top of it!
+Created by [Umair Ramzan](https://github.com/umairramzan99)
