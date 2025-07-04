@@ -12,7 +12,6 @@ This project is a simple visitor counter web app built using Flask and Redis, co
 - Kubernetes (Minikube)
 - Jenkins
 - Docker Hub
-- GitHub Webhooks
 
 ---
 
@@ -97,13 +96,6 @@ Images are automatically pushed to:
 
 Tags:
 - `1.1`, `1.2`, ... based on Jenkins build number
-
----
-
-## 🔔 Webhook
-
-- GitHub webhook triggers pipeline automatically on new commit.
-- URL used: `http://<your-public-ip>:8085/github-webhook/`
 
 ---
 
