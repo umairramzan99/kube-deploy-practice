@@ -3,6 +3,7 @@ pipeline {
 
     environment {
         IMAGE_NAME = "visitor-counter-app"
+        VERSION_PREFIX = "1"
         IMAGE_TAG = "${VERSION_PREFIX}.${BUILD_NUMBER}"
         DOCKERHUB_USERNAME = "umair668"
         IMAGE_FULL_NAME = "${DOCKERHUB_USERNAME}/${IMAGE_NAME}:${IMAGE_TAG}"
