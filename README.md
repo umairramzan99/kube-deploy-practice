@@ -1,146 +1,128 @@
+# Visitor Counter App 🚀
 
-# Visitor Counter App with Redis, Kubernetes & Jenkins CI/CD
-
-This project is a simple Flask + Redis web app that shows the number of visitors. It uses:
-
-- ✅ Flask app as the frontend (`app/app.py`)
-- 🧠 Redis for storing visitor count
-- ☸️ Kubernetes for deployment (Minikube)
-- 📦 PersistentVolume so visitor count is saved across pod restarts
-- ⚙️ Jenkins pipeline for automated CI/CD
-- 🐳 Docker to containerize the app
+This project is a **Flask + Redis** based web application that counts visitors and stores the count in Redis. It is fully containerized and deployed to **Minikube using Jenkins CI/CD**, and uses a **PersistentVolume** so the visitor count resumes after restarts.
 
 ---
 
-## 📁 Directory Structure
+## 📁 Project Structure
 
 ```
+visitor-app/
 .
 ├── app
-│   ├── app.py
-│   ├── Dockerfile
-│   └── requirements.txt
+│   ├── app.py
+│   ├── Dockerfile
+│   └── requirements.txt
 ├── deployment.yaml
-├── service.yaml
+├── docker-compose.yml
 ├── Jenkinsfile
+├── nginx
+│   ├── default.conf
+│   └── Dockerfile
+├── README.md
 ├── redis-deployment.yaml
-├── redis-service.yaml
-├── redis-pv.yaml
 ├── redis-pvc.yaml
+├── redis-pv.yaml
+├── redis-service.yaml
+└── service.yaml
+
 ```
 
 ---
 
-## 🚀 Getting Started
+## ⚙️ Prerequisites
 
-### 🔧 Prerequisites
-
-- Minikube installed and started
-- Jenkins running locally (e.g. at `localhost:8085`)
-- Docker installed
+- Minikube
+- Docker & Docker Hub account
+- Jenkins installed (locally or externally)
 - Git installed
+- Your Docker Hub credentials stored in Jenkins (`dockerhub-creds`)
 
 ---
 
-## 🛠️ Setup Instructions
+## 🐳 Docker Hub
 
-### 1. Clone the Repo
+The visitor app image is built, tagged, and pushed to Docker Hub automatically by Jenkins Pipeline.
 
-```bash
-git clone https://github.com/umairramzan99/kube-deploy-practice.git
-cd kube-deploy-practice
-```
-
-### 2. Ensure Redis Volume Directory Exists
-
-```bash
-mkdir -p /home/umair/redis-data
-```
-
-This path will be used as the host path for Redis data.
+Docker Hub Repo: `https://hub.docker.com/repository/docker/umair668/visitor-counter-app`
 
 ---
 
-### 3. Start Minikube with Volume Mount
+## 🔧 Jenkins Setup
 
-```bash
-minikube stop
-minikube start --mount --mount-string="/home/umair/redis-data:/mnt/redis-data"
-```
+### Required Jenkins Credentials
+- **dockerhub-creds**: Type = Username with password
+    - Username = `umair668`
+    - Password = `********` (securely saved)
 
----
+### Jenkinsfile Highlights
 
-### 4. Set Up Jenkins Access to Minikube
-
-> If Jenkins fails to reach Minikube, do this:
-
-```bash
-# As host user
-sudo mkdir -p /var/lib/jenkins/.kube /var/lib/jenkins/.minikube
-sudo cp -r ~/.kube/config /var/lib/jenkins/.kube/config
-sudo cp -r ~/.minikube/profiles ~/.minikube/certs /var/lib/jenkins/.minikube/
-sudo chown -R jenkins:jenkins /var/lib/jenkins/.kube /var/lib/jenkins/.minikube
-```
-
-Edit `/var/lib/jenkins/.kube/config` and replace any path starting with `/home/umair/.minikube` to `/var/lib/jenkins/.minikube`
+- Builds and tags Docker image
+- Pushes to Docker Hub
+- Applies Kubernetes manifests for:
+  - `redis-pv.yaml` (Persistent Volume)
+  - `redis-pvc.yaml` (Persistent Volume Claim)
+  - `redis-deployment.yaml`
+  - `redis-service.yaml`
+  - `deployment.yaml` (visitor app)
+  - `service.yaml` (NodePort)
 
 ---
 
-### 5. Create Jenkins Pipeline
+## 🔁 CI/CD Pipeline Flow
 
-In Jenkins UI:
+1. Clone repo in Jenkins pipeline
+2. Build and tag Docker image: `visitor-counter-app:latest`
+3. Push image to Docker Hub as `umair668/visitor-counter-app:latest`
+4. Apply all Kubernetes manifests
+5. Persistent Redis stores visitor count
+6. App accessible via: `http://<minikube-ip>:30080`
 
-- Go to **New Item**
-- Choose **Pipeline**
-- Use this Git repo: `https://github.com/umairramzan99/kube-deploy-practice.git`
-- Pipeline script path: `Jenkinsfile`
-- Click **Build Now**
-
----
-
-## 🌐 Access the App
-
+To get Minikube IP:
 ```bash
 minikube service visitor-service --url
 ```
 
-It should open something like:
+---
 
-```
-http://192.168.xx.xx:30080
-```
+## 📌 Note
+
+- Make sure Jenkins is connected to the internet to push images.
+- Update image names in `deployment.yaml` as needed.
 
 ---
 
-## 🧪 Test Persistence
-
-- Visit the app → Refresh 4–5 times → note the visitor count
-- Run:  
-  ```bash
-  kubectl delete pod -l app=visitor
-  ```
-- Wait for pod to restart
-- Visit the URL again
-
-✅ Visitor number should continue (e.g., 6, 7…)  
-❌ If it resets to 1, check if `/home/umair/redis-data/` contains `dump.rdb`
-
----
-
-## 📤 Pushing to Docker Hub (Optional)
-
-Once ready to push images to Docker Hub:
+## ✅ How to Re-run
 
 ```bash
-docker login
-docker tag visitor-counter-app umairhub/visitor-counter-app:latest
-docker push umairhub/visitor-counter-app:latest
-```
+# Re-clone project
+git clone https://github.com/umairramzan99/kube-deploy-practice.git
+cd kube-deploy-practice
 
-Update `deployment.yaml` to pull from Docker Hub.
+# Push any changes (if needed)
+git add .
+git commit -m "your message"
+git push origin main
+
+# Trigger Jenkins pipeline
+# App will be deployed + Redis persistent storage will be used
+```
 
 ---
 
-## 📃 Credits
+## 🧼 Clean Up
 
-Created by [Umair Ramzan](https://github.com/umairramzan99)
+```bash
+kubectl delete -f deployment.yaml
+kubectl delete -f service.yaml
+kubectl delete -f redis-deployment.yaml
+kubectl delete -f redis-service.yaml
+kubectl delete -f redis-pv.yaml
+kubectl delete -f redis-pvc.yaml
+```
+
+---
+
+## 👤 Author
+
+Umair Ramzan
