@@ -8,6 +8,10 @@ pipeline {
         IMAGE_FULL_NAME = "${DOCKERHUB_USERNAME}/${IMAGE_NAME}:${IMAGE_TAG}"
         DEPLOY_YAML = "deployment.yaml"
         SERVICE_YAML = "service.yaml"
+        REDIS_DEPLOY = "redis-deployment.yaml"
+        REDIS_SERVICE = "redis-service.yaml"
+        REDIS_PV = "redis-pv.yaml"
+        REDIS_PVC = "redis-pvc.yaml"
         KUBECONFIG = "/var/lib/jenkins/.kube/config"
     }
 
@@ -41,7 +45,18 @@ pipeline {
         stage('Deploy to Minikube') {
             steps {
                 script {
+                    // Update app deployment image to Docker Hub image
                     sh "sed -i 's|image:.*|image: ${IMAGE_FULL_NAME}|' ${DEPLOY_YAML}"
+
+                    // Create PV and PVC before deploying Redis
+                    sh "KUBECONFIG=${KUBECONFIG} kubectl apply -f ${REDIS_PV}"
+                    sh "KUBECONFIG=${KUBECONFIG} kubectl apply -f ${REDIS_PVC}"
+
+                    // Deploy Redis
+                    sh "KUBECONFIG=${KUBECONFIG} kubectl apply -f ${REDIS_DEPLOY}"
+                    sh "KUBECONFIG=${KUBECONFIG} kubectl apply -f ${REDIS_SERVICE}"
+
+                    // Deploy visitor app
                     sh "KUBECONFIG=${KUBECONFIG} kubectl apply -f ${DEPLOY_YAML}"
                     sh "KUBECONFIG=${KUBECONFIG} kubectl apply -f ${SERVICE_YAML}"
                 }
@@ -51,10 +66,10 @@ pipeline {
 
     post {
         success {
-            echo "✅ Image pushed and deployed from Docker Hub!"
+            echo "✅ Image pushed and everything deployed successfully from Docker Hub!"
         }
         failure {
-            echo "❌ Something went wrong. Check logs."
+            echo "❌ Something went wrong. Check pipeline logs."
         }
     }
 }
