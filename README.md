@@ -131,4 +131,4 @@ kubectl delete -f redis-pvc.yaml
 
 ## 👤 Author
 
-Umair Ramzan | WSO2 | Arcana Info |
+Umair Ramzan
