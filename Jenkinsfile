@@ -68,9 +68,16 @@ pipeline {
     post {
         success {
             echo "✅ Image pushed and everything deployed successfully from Docker Hub!"
+            mail to: 'umair25699@gmail.com',
+             subject: "✅ SUCCESS: Build #${BUILD_NUMBER}",
+             body: "Build passed and deployed.
+Check DockerHub: ${IMAGE_FULL_NAME}"
         }
         failure {
             echo "❌ Something went wrong. Check pipeline logs."
+            mail to: 'umair25699@gmail.com',
+             subject: "❌ FAILURE: Build #${BUILD_NUMBER}",
+             body: "Build failed. Check logs in Jenkins."
         }
     }
 }

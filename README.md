@@ -1,23 +1,26 @@
-# Visitor Counter App (Flask + Redis + Kubernetes + Jenkins CI/CD)
+# 🚀 Visitor Counter App on Kubernetes with CI/CD
 
-This project is a simple visitor counter web app built using Flask and Redis, containerized with Docker, deployed to Kubernetes (Minikube), and managed via Jenkins CI/CD pipeline.
+This project demonstrates a full CI/CD pipeline for deploying a simple Flask-based visitor counter application on a local Minikube Kubernetes cluster using Jenkins, Docker, and Docker Hub.
 
 ---
 
-## 🧰 Tech Stack
+## 🧱 Tech Stack
 
 - Python (Flask)
-- Redis (with Persistent Volume)
-- Docker
-- Kubernetes (Minikube)
-- Jenkins
-- Docker Hub
+- Redis
+- Docker & Docker Hub
+- Kubernetes (via Minikube)
+- Jenkins (with Git SCM Polling)
+- Persistent Volume support
+- SCM Webhook & Polling Trigger support
+- Email Notifications (Build Results)
 
 ---
 
-## 🏗️ Project Structure
+## 📁 Project Structure
 
 ```
+visitor-app/
 .
 ├── app
 │   ├── app.py
@@ -39,97 +42,116 @@ This project is a simple visitor counter web app built using Flask and Redis, co
 
 ---
 
-## 🚀 Prerequisites
+## 🔧 Setup Instructions
 
-- Docker
-- Minikube
-- Jenkins running on localhost (e.g., http://localhost:8085)
-- GitHub repo for source code
-- Docker Hub account
-
----
-
-## 🔄 CI/CD Pipeline (via Jenkins)
-
-Each push to GitHub triggers the Jenkins pipeline which:
-1. Builds the Docker image for the Flask app
-2. Tags it as `visitor-counting-app:<build-number>`
-3. Pushes it to Docker Hub (`umair669/visitor-counting-app:<build-number>`)
-4. Deploys it to Minikube
-5. Uses a persistent Redis volume to retain visitor count across pods
-
-### 📝 Jenkinsfile Notes:
-- Tags are dynamic based on Jenkins build number.
-- Docker login uses credentials stored in Jenkins as `dockerhub-creds`.
-- Deployment image is replaced dynamically using `sed`.
-
----
-
-## 🧪 Running Locally (Manual Steps)
+### 1. Clone the Repository
 
 ```bash
-# Clone the repo
 git clone https://github.com/umairramzan99/kube-deploy-practice.git
 cd kube-deploy-practice
+```
 
-# Deploy Redis and Volume
+### 2. Start Minikube
+
+```bash
+minikube start --driver=docker
+```
+
+### 3. Create Required Directories on Host
+
+```bash
+mkdir -p /home/umair/redis-data
+```
+
+### 4. Apply Kubernetes Configurations
+
+```bash
 kubectl apply -f redis-pv.yaml
 kubectl apply -f redis-pvc.yaml
 kubectl apply -f redis-deployment.yaml
 kubectl apply -f redis-service.yaml
+```
 
-# Replace <build-number> with latest
-kubectl apply -f deployment.yaml
-kubectl apply -f service.yaml
+### 5. Configure Jenkins
 
-# Access app
+- Install required plugins:
+  - Docker
+  - Docker Pipeline
+  - Kubernetes CLI Plugin
+  - Git
+  - Email Extension
+
+- Add DockerHub credentials in **Jenkins → Manage Jenkins → Credentials** with ID `dockerhub-creds`.
+
+- Configure Jenkins system email:
+  - **SMTP server** (e.g. smtp.gmail.com)
+  - Default user email suffix and credentials
+
+- Add this job:
+  - Select **"Git"** and set repo URL to: `https://github.com/umairramzan99/kube-deploy-practice.git`
+  - Under **Build Triggers**, enable:
+    - [x] GitHub hook trigger for GITScm polling
+    - [x] Poll SCM: `H/2 * * * *`
+
+---
+
+## ⚙️ Jenkinsfile Logic Summary
+
+- Builds Docker image with tag: `visitor-counter-app:<version>` (auto-incremented using Jenkins build number)
+- Pushes image to DockerHub as `umair668/visitor-counter-app:<version>`
+- Updates `deployment.yaml` to use this image
+- Applies `deployment.yaml` and `service.yaml` to Minikube
+- Sends email notifications on build success/failure
+
+---
+
+## 🌐 Access the App
+
+After successful deployment:
+
+```bash
 minikube service visitor-service --url
 ```
 
----
-
-## 🔐 Docker Hub
-
-Images are automatically pushed to:
-
-📦 https://hub.docker.com/r/umair669/visitor-counting-app
-
-Tags:
-- `1.1`, `1.2`, ... based on Jenkins build number
-
----
-
-## 📂 Persistent Volume
-
-The Redis data is stored at:
-
-```yaml
-hostPath:
-  path: /home/umair/redis-data
+Example output:
+```
+http://192.168.49.2:30080
 ```
 
-Ensure the path exists on your host system.
-
 ---
 
- ## 🧼 Clean Up
+## 📩 Email Notification Setup
 
-```bash
-kubectl delete -f deployment.yaml
-kubectl delete -f service.yaml
-kubectl delete -f redis-deployment.yaml
-kubectl delete -f redis-service.yaml
-kubectl delete -f redis-pv.yaml
-kubectl delete -f redis-pvc.yaml
+1. Go to `Manage Jenkins → Configure System`
+2. In "Extended E-mail Notification":
+   - SMTP Server: `smtp.gmail.com`
+   - Use SSL: ✅
+   - SMTP Port: `465`
+   - Sender: `your_email@gmail.com`
+   - Credentials: Add Gmail username & App Password
+
+3. Test configuration and save.
+
+In `Jenkinsfile`, add this in `post` block:
+
+```groovy
+post {
+    success {
+        mail to: 'your_email@gmail.com',
+             subject: "✅ SUCCESS: Build #${BUILD_NUMBER}",
+             body: "Build passed and deployed.
+Check DockerHub: ${IMAGE_FULL_NAME}"
+    }
+    failure {
+        mail to: 'your_email@gmail.com',
+             subject: "❌ FAILURE: Build #${BUILD_NUMBER}",
+             body: "Build failed. Check logs in Jenkins."
+    }
+}
 ```
 
-
-## 🗓️ Last Updated
-
-2025-07-04 10:27:01
-
+---
 
 ## 👤 Author
 
 Umair Ramzan
-### SCM Trigger Test - Fri Jul  4 04:27:46 PM PKT 2025
