@@ -19,18 +19,23 @@ This project is a simple visitor counter web app built using Flask and Redis, co
 ## 🏗️ Project Structure
 
 ```
-visitor-app/
-├── app/
-│   ├── app.py
-│   ├── requirements.txt
-│   └── Dockerfile
+.
+├── app
+│   ├── app.py
+│   ├── Dockerfile
+│   └── requirements.txt
 ├── deployment.yaml
-├── service.yaml
+├── docker-compose.yml
+├── Jenkinsfile
+├── nginx
+│   ├── default.conf
+│   └── Dockerfile
+├── README.md
 ├── redis-deployment.yaml
-├── redis-service.yaml
-├── redis-pv.yaml
 ├── redis-pvc.yaml
-└── Jenkinsfile
+├── redis-pv.yaml
+├── redis-service.yaml
+└── service.yaml
 ```
 
 ---
