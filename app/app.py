@@ -1,16 +1,13 @@
 from flask import Flask
 import redis
-import getpass
 
 app = Flask(__name__)
 cache = redis.Redis(host='redis', port=6379)
 
-ubuntu_user = getpass.getuser()
-
 @app.route('/')
 def hello():
     count = cache.incr('hits')
-    return f'Hello from Flask, {ubuntu_user}! You are visitor number: {count}'
-
+    return f'Hello from Flask! You are visitor number: {count}'
+    
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=8080)
+    app.run(host='0.0.0.0', port=8080
