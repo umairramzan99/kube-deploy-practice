@@ -68,15 +68,9 @@ pipeline {
     post {
     success {
         echo "✅ Image pushed and everything deployed successfully from Docker Hub and is accessible at 192.168.xx.2:30080!"
-        mail to: 'umairramzan403@gmail.com',
-             subject: "Jenkins Pipeline Success: ${IMAGE_NAME} Build #${BUILD_NUMBER}",
-             body: "The Docker image ${IMAGE_FULL_NAME} has been successfully built and deployed to Minikube. You can access the application at 192.168.xx.2:30080."
     }
     failure {
         echo "❌ Something went wrong. Check pipeline logs."
-        mail to: 'umairramzan403@gmail.com',
-             subject: "Jenkins Pipeline Failure: ${IMAGE_NAME} Build #${BUILD_NUMBER}",
-             body: "The build or deployment of ${IMAGE_FULL_NAME} has failed. Please check the Jenkins logs for more details."
     }
 }
 }
