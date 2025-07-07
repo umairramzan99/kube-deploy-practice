@@ -67,7 +67,7 @@ pipeline {
 
     post {
     success {
-        echo "✅ Image pushed and everything deployed successfully from Docker Hub!"
+        echo "✅ Image pushed and everything deployed successfully from Docker Hub and is accessible at 192.168.xx.2:30080!"
     }
     failure {
         echo "❌ Something went wrong. Check pipeline logs."
